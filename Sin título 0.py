@@ -13,7 +13,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 import pandas as pd
 
-df = pd.DataFrame(columns= ['Date', 'Name', 'Tweets','Retweets'])
+df = pd.DataFrame(columns= ['Date', 'Name', 'Tweet', 'Retweets', 'Favorito'])
 def init_driver(driver_type):
     if driver_type == 1:
         driver = webdriver.Firefox()
@@ -56,6 +56,7 @@ def scrape_tweets(driver):
         names = []
         tweet_texts = []
         retweets= []
+        fav_list=[]
         for i in content:
             date = (i.find_all("span", class_="_timestamp")[0].string).strip()
             try:
@@ -70,19 +71,26 @@ def scrape_tweets(driver):
                 retweet=i.find('button',class_='js-actionRetweet').find('span',class_='ProfileTweet-actionCountForPresentation').strings
             except Exception as e:
                 print('error retweets',e)
-                retweet=0
+                retweet='0'
+            try:
+                fav=i.find('button',class_='js-actionFavorite').find('span',class_='ProfileTweet-actionCountForPresentation').strings
+            except Exception as e:
+                print('error favorite',e)
+                fav='0'
             tweet_text = "".join(tweets)
             # hashtags = i.find_all("a", class_="twitter-hashtag")[0].string
             dates.append(date)
             names.append(name)
             tweet_texts.append(tweet_text)
             retweets.append("".join(retweet))
+            fav_list.append("".join(fav))
 
         data = {
             "date": dates,
             "name": names,
             "tweet": tweet_texts,
-            "retweets": retweets
+            "retweets": retweets,
+            "favoritos": fav_list
         }
 
         make_csv(data)
@@ -96,12 +104,12 @@ def make_csv(data):
     global df
     l = len(data['date'])
     print("count: %d" % l)
-    fieldnames = ['Date', 'Name', 'Tweet', 'Retweets']
+    fieldnames = ['Date', 'Name', 'Tweet', 'Retweets', 'Favorito']
 #        writer = DictWriter(file, fieldnames=fieldnames)
 #        writer.writeheader()
     for i in range(l):
         if data['date'][i] and data['name'][i] and data['tweet'][i]:
-            dfappend=pd.DataFrame([[data['date'][i], data['name'][i], data['tweet'][i], data['retweets'][i]]], columns=fieldnames)
+            dfappend=pd.DataFrame([[data['date'][i], data['name'][i], data['tweet'][i], data['retweets'][i], data['favoritos'][i]]], columns=fieldnames)
             df=df.append(dfappend)
 #            writer.writerow({'Date': data['date'][i],
 #                             'Name': data['name'][i],
@@ -129,8 +137,8 @@ def main():
     wordsToSearch = '%23MetroTUS'.split(',')
     for w in wordsToSearch:
         w = w.strip()
-    start_date = '2018-06-02'#input("Enter the start date in (Y-M-D): ")
-    end_date = '2018-06-03'#input("Enter the end date in (Y-M-D): ")
+    start_date = '2018-01-15'#input("Enter the start date in (Y-M-D): ")
+    end_date = '2018-06-20'#input("Enter the end date in (Y-M-D): ")
     lang = 3#int(input("0) All Languages 1) English | 2) Italian | 3) Spanish | 4) French | 5) German | 6) Russian | 7) Chinese\nEnter the language you want to use: "))
     all_dates = get_all_dates(start_date, end_date)
     print(all_dates)
@@ -142,6 +150,9 @@ def main():
         time.sleep(1)
         print("The tweets for {} are ready!".format(all_dates[i]))
         driver.quit()
+    writer = pd.ExcelWriter('output.xlsx')
+    df.to_excel(writer,'tweets')
+    writer.save()
 
 
 if __name__ == "__main__":
