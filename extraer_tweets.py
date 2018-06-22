@@ -150,7 +150,7 @@ def main():
         time.sleep(1)
         print("The tweets for {} are ready!".format(all_dates[i]))
         driver.quit()
-    writer = pd.ExcelWriter('output.xlsx')
+    writer = pd.ExcelWriter('output_con_alcance.xlsx')
     df.to_excel(writer,'tweets')
     writer.save()
 
