@@ -12,8 +12,12 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 import pandas as pd
-
-df = pd.DataFrame(columns= ['Date', 'Name', 'Tweet', 'Retweets', 'Favorito'])
+import tweepy
+api=None
+disc_followers=dict()
+dict_locations=dict()
+dict_user_from=dict()
+df = pd.DataFrame(columns= ['Date', 'Name', 'Username','Followers','Location','User_From','Tweet', 'Retweets', 'Favorito'])
 def init_driver(driver_type):
     if driver_type == 1:
         driver = webdriver.Firefox()
@@ -39,7 +43,6 @@ def scroll(driver, start_date, end_date, words, lang, max_time=5):
     if lang != 0:
         url += "l={}&".format(languages[lang])
     url += "src=typd"
-    print(url)
     driver.get(url)
     start_time = time.time()  # remember when we started
     while (time.time() - start_time) < max_time:
@@ -55,8 +58,12 @@ def scrape_tweets(driver):
         dates = []
         names = []
         tweet_texts = []
+        followers = []
+        usernames= []
         retweets= []
         fav_list=[]
+        locations=[]
+        createds=[]
         for i in content:
             date = (i.find_all("span", class_="_timestamp")[0].string).strip()
             try:
@@ -77,10 +84,43 @@ def scrape_tweets(driver):
             except Exception as e:
                 print('error favorite',e)
                 fav='0'
+            try:
+                username = (
+                    i.find(
+                        "span",
+                        class_="username").find('b').string).strip()
+            except Exception:
+                username = "Anonymous"
+            #vamos a sacar varios datos del usuario de la api
+            global api
+            try:
+                
+                if username in disc_followers:
+                    f_num= disc_followers[username]
+                    f_created= dict_user_from[username]
+                    f_location= dict_locations[username]
+                    
+                else:
+                    user = api.get_user(username)
+                    disc_followers[username]=user.followers_count
+                    dict_locations[username]=user.location
+                    dict_user_from[username]=user.created_at
+                    f_num=disc_followers[username]
+                    f_created=dict_user_from[username]
+                    f_location=dict_locations[username]
+            except Exception:
+                f_num=-99
+                f_created=None
+                f_location=None
+            print(f_num, f_location, f_created)
             tweet_text = "".join(tweets)
             # hashtags = i.find_all("a", class_="twitter-hashtag")[0].string
             dates.append(date)
             names.append(name)
+            usernames.append(username)
+            followers.append(f_num)
+            locations.append(f_location)
+            createds.append(f_created)
             tweet_texts.append(tweet_text)
             retweets.append("".join(retweet))
             fav_list.append("".join(fav))
@@ -88,6 +128,10 @@ def scrape_tweets(driver):
         data = {
             "date": dates,
             "name": names,
+            "username": usernames,
+            "followers": followers,
+            "location": locations,
+            "user_from": createds,
             "tweet": tweet_texts,
             "retweets": retweets,
             "favoritos": fav_list
@@ -104,12 +148,12 @@ def make_csv(data):
     global df
     l = len(data['date'])
     print("count: %d" % l)
-    fieldnames = ['Date', 'Name', 'Tweet', 'Retweets', 'Favorito']
+    fieldnames = ['Date', 'Name', 'Username','Followers','Location','User_From','Tweet', 'Retweets', 'Favorito']
 #        writer = DictWriter(file, fieldnames=fieldnames)
 #        writer.writeheader()
     for i in range(l):
         if data['date'][i] and data['name'][i] and data['tweet'][i]:
-            dfappend=pd.DataFrame([[data['date'][i], data['name'][i], data['tweet'][i], data['retweets'][i], data['favoritos'][i]]], columns=fieldnames)
+            dfappend=pd.DataFrame([[data['date'][i], data['name'][i], data['username'][i], data['followers'][i],data['location'][i],data['user_from'][i], data['tweet'][i], data['retweets'][i], data['favoritos'][i]]], columns=fieldnames)
             df=df.append(dfappend)
 #            writer.writerow({'Date': data['date'][i],
 #                             'Name': data['name'][i],
@@ -130,15 +174,19 @@ def get_all_dates(start_date, end_date):
 
 
 def main():
-    
+    #Conexion a twetet
+    auth = tweepy.OAuthHandler('eRebPUmyr2MTWyyy3h2Dq5Lqy', 'CvpgdkRtjqq2trUVXHzyb4p0vOMEzAdsYnlBtvVGLfIjrrin3L')
+    auth.set_access_token('1308447878-dh1MOCdXDciN49xw2hdBtdgJtYfJlwsQYCKlGNa', 'Jd6xcVEhP6F9GPyWabKFfM04Wufn77fUwBmqUOfk0YTWm')
+    global api
+    api = tweepy.API(auth)
     driver_type = 2#int(input(
 #        "1) Firefox | 2) Chrome | 3) IE | 4) Opera | 5) PhantomJS\nEnter the driver you want to use: "))
     # input("Enter the words: ").split(',')
     wordsToSearch = '%23MetroTUS'.split(',')
     for w in wordsToSearch:
         w = w.strip()
-    start_date = '2018-01-15'#input("Enter the start date in (Y-M-D): ")
-    end_date = '2018-06-20'#input("Enter the end date in (Y-M-D): ")
+    start_date = '2018-02-01'#input("Enter the start date in (Y-M-D): ")
+    end_date = '2018-02-02'#input("Enter the end date in (Y-M-D): ")
     lang = 3#int(input("0) All Languages 1) English | 2) Italian | 3) Spanish | 4) French | 5) German | 6) Russian | 7) Chinese\nEnter the language you want to use: "))
     all_dates = get_all_dates(start_date, end_date)
     print(all_dates)
@@ -157,3 +205,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
