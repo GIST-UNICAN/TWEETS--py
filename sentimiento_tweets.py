@@ -8,7 +8,7 @@ import indicoio
 from textblob import TextBlob
 import pandas as pd
 indicoio.config.api_key = '94ecf5c47df2baa0f6b49db7afcae0ef'
-ruta_excel=r"C:\GITHUB - SYNC\TWEETS--py\output.xlsx"
+ruta_excel=r"C:\GITHUB - SYNC\TWEETS--py\output_con_alcance.xlsx"
 
 
 # single example
@@ -58,8 +58,8 @@ def indico_sentiment(frase):
 test=pd.read_excel(ruta_excel,'tweets')
 test.reset_index(inplace=True)
 #test=datos.loc[[0,1,2,3,4,5,6,7,8,9]]
-test['Tweet_en']=test['Tweet'].apply(traduce)
-test['Sentiment_blob']=test['Tweet_en'].apply(blob_sentiment)
+#test['Tweet_en']=test['Tweet'].apply(traduce)
+#test['Sentiment_blob']=test['Tweet_en'].apply(blob_sentiment)
 test['Sentiment_indico']=test['Tweet'].apply(indico_sentiment)
 
 writer = pd.ExcelWriter('output_sentimientos.xlsx')

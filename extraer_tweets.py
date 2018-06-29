@@ -186,7 +186,7 @@ def main():
     for w in wordsToSearch:
         w = w.strip()
     start_date = '2018-01-15'#input("Enter the start date in (Y-M-D): ")
-    end_date = '2018-06-28'#input("Enter the end date in (Y-M-D): ")
+.< b    end_date = '2018-06-28'#input("Enter the end date in (Y-M-D): ")
     lang = 3#int(input("0) All Languages 1) English | 2) Italian | 3) Spanish | 4) French | 5) German | 6) Russian | 7) Chinese\nEnter the language you want to use: "))
     all_dates = get_all_dates(start_date, end_date)
     print(all_dates)
